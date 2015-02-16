@@ -24,7 +24,7 @@ import org.apache.spark.SparkConf
 
 object NGramFilter {
 
-  val googleNGramsS3URL = "s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-all/*"
+  val googleNGramsS3URL = "s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/5gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/4gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/3gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/2gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/5gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/4gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/3gram/data,s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/2gram/data"
 
   def readCompoundsDictionary(path:String):Set[String] = {
     Source.fromFile(path).getLines.map( s => s.toLowerCase.replaceAll("[^a-zA-Z0-9\\s]+", " ") ).toSet
