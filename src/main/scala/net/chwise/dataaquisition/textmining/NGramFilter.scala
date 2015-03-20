@@ -99,10 +99,6 @@ Command line options representing class
             val sourceRDDs = sourceURLs.map( s => sc.newAPIHadoopFile(s, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text]) )
             val ngramsDatasetRows = sourceRDDs.reduceLeft( _ union _ )
 
-            //val ngramsDatasetRowsFull = sourceRDDs.reduceLeft( _ union _ )
-            //val ngramsDatasetRows = if (maxNGramsToProcess == -1) ngramsDatasetRowsFull else ngramsDatasetRowsFull.take(maxNGramsToProcess)
-
-            //val ngramsWithOccurences = ngramsDatasetRows.map( (k:LongWritable,t:Text) => stringRecordToNgramAndFreq(t.toString()) ).reduceByKey( _ + _ )
             val ngramsWithOccurences = ngramsDatasetRows.map( (p:(LongWritable,Text)) => stringRecordToNgramAndFreq(p._2.toString()) ).reduceByKey( _ + _ )
 
             //Read compounds dictionary

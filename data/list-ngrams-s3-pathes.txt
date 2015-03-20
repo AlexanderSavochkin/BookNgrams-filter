@@ -1,8 +1,8 @@
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/5gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/4gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/3gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/2gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/5gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/4gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/3gram/data
-s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/2gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/5gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/4gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/3gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/2gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/5gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/4gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/3gram/data
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/2gram/data
