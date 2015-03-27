@@ -1,0 +1,1 @@
+s3n://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/3gram/data

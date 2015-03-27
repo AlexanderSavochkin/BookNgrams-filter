@@ -24,6 +24,6 @@ echo "export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> run-there.sh
 
 cat run-there-base.sh >> run-there.sh
 
-scp -i /home/asavochkin/Work/Projects/ChWiSe/spark-cluster.pem run-there.sh root@$MASTER
+scp -i $KEYPATH run-there.sh root@$MASTER:
 
 $SPARK_HOME/ec2/spark-ec2 -k spark-cluster -i /home/asavochkin/Work/Projects/ChWiSe/spark-cluster.pem login test-spark-cluster
