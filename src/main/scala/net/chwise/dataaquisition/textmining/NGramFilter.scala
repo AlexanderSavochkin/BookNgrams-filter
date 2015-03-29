@@ -16,8 +16,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 package net.chwise.dataaquisition.textmining
 
-import java.io.File
 import scala.io.Source
+import scala.collection.immutable.Set
 
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
@@ -28,10 +28,6 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.Text
 
 object NGramFilter {
-
-  def readCompoundsDictionary(path:String):Set[String] = {
-    Source.fromFile(path).getLines.map( s => s.toLowerCase.replaceAll("[^a-zA-Z0-9\\s]+", " ") ).toSet
-  }
 
   def containsDictionaryPhrase(s: String, dict: Set[String]): Boolean = {
 
@@ -94,15 +90,12 @@ Command line options representing class
             val conf = new SparkConf().setAppName("N-Gram filter")
             val sc = new SparkContext(conf)
 
-            //Union all inputs
-            val sourceURLs = Source.fromFile(ngramsSetPathList).getLines
-            val sourceRDDs = sourceURLs.map( s => sc.newAPIHadoopFile(s, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text]) )
-            val ngramsDatasetRows = sourceRDDs.reduceLeft( _ union _ )
-
-            val ngramsWithOccurences = ngramsDatasetRows.map( (p:(LongWritable,Text)) => stringRecordToNgramAndFreq(p._2.toString()) ).reduceByKey( _ + _ )
+            val sourceRDD = sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text])
+            val ngramsWithOccurences = sourceRDD.map( (p:(LongWritable,Text)) => stringRecordToNgramAndFreq(p._2.toString()) ).reduceByKey( _ + _ )
 
             //Read compounds dictionary
-            val compoundNames = readCompoundsDictionary(targetPhrasesFilePath)
+            val compoundNamesRDD = sc.textFile(targetPhrasesFilePath)
+            val compoundNames:Set[String] = compoundNamesRDD.collect().toSet
             val broadcastCompoundNames = sc.broadcast(compoundNames)
 
             //Process n-grams in cluster
