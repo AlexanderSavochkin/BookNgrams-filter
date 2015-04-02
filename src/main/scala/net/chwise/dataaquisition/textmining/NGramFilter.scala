@@ -66,7 +66,9 @@ Command line options representing class
     compoundNamesFilePath:String = "",   //Path to file containing list of all chemical compounds
     ngramsSetPathListFile:String = "",   //Path to (local) file containing list of path (usually in cloud) with n-grams. See PROJECTROOT/data/list-ngrams-s3-pathes.txt
     outputFile:String = "",              //Output path (hdfs or local)
-    maxNGramsToProcess:Int = -1          //By default this programs will process all ngrams, but it is possible to process some smaller ngrams number (for debugging)
+    maxNGramsToProcess:Int = -1,         //By default this programs will process all ngrams, but it is possible to process some smaller ngrams number (for debugging)
+    inputInPlainText:Boolean = false,    //google ngrams are stored in S3 in LZO-compressed format. This option enables reading data in plain text (for debugging)
+    debug:Boolean = false
   )
 
   def main(args: Array[String]) {
@@ -77,21 +79,30 @@ Command line options representing class
         opt[String]('g', "ngramspathfile") required() valueName("<file>") action { (f, c) => c.copy(ngramsSetPathListFile = f) } text("Path to (local) file containing list of path (usually in cloud) with n-grams. See PROJECTROOT/data/list-ngrams-s3-pathes.txt")
         opt[String]('o', "output") required() valueName("<file>") action { (f, c) => c.copy(outputFile = f) } text("Path to (local) file containing list of path (usually in cloud) with n-grams. See PROJECTROOT/data/list-ngrams-s3-pathes.txt")
         opt[Int]('n', "number") action { (n, c) => c.copy(maxNGramsToProcess = n) } text("By default this programs will process all ngrams, but it is possible to process some smaller ngrams number (for debugging)")
+        opt[Unit]('p',"plaintextinput") action { (_, c) => c.copy(inputInPlainText = true)  }
+        opt[Unit]('d',"debug") action { (_, c) => c.copy(debug = true)  }
     }
 
     // parser.parse returns Option[C]
     cmdlineParser.parse(args, CmdlineConfig()) match {
         case Some(config) => {
             // do stuff
-            val (targetPhrasesFilePath, ngramsSetPathList, outputFile, maxNGramsToProcess) = config match {
-                case CmdlineConfig(p1, p2, p3, n) => (p1, p2, p3, n)
+            val (targetPhrasesFilePath, ngramsSetPathList, outputFile, maxNGramsToProcess, plainTextInput, debug) = config match {
+                case CmdlineConfig(p1, p2, p3, n, pt, dbg) => (p1, p2, p3, n, pt, dbg)
             }
 
             val conf = new SparkConf().setAppName("N-Gram filter")
             val sc = new SparkContext(conf)
 
-            val sourceRDD = sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text])
-            val ngramsWithOccurences = sourceRDD.map( (p:(LongWritable,Text)) => stringRecordToNgramAndFreq(p._2.toString()) ).reduceByKey( _ + _ )
+            val sourceRDD = if (plainTextInput)
+                sc.textFile(ngramsSetPathList)
+            else
+                sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text]).map( (p:(LongWritable,Text)) => p._2.toString )
+
+            val ngramsWithOccurences = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) ).reduceByKey( _ + _ )
+
+            if (debug)
+                ngramsWithOccurences.saveAsTextFile(outputFile + "_debug_ngramsWithOccurences")
 
             //Read compounds dictionary
             val compoundNamesRDD = sc.textFile(targetPhrasesFilePath)
@@ -104,8 +115,6 @@ Command line options representing class
 
             //Save results
             chemicalNGramsTSV.saveAsTextFile(outputFile)
-
-            println("Done")
         }
         case None => {} // arguments are bad, error message will have been displayed
     }    
