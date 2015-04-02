@@ -4,3 +4,11 @@ that ethanol is very flamable   1995    2   2 1
 truxe refe fnnn dlk 1998    3   1 1
 sulfur is yellow    2000    8   1 1
 sulfur is yellow    2001    3   2 1
+ethanol is flamable compound	1994	6	4	2
+ethanol is flamable compound	1995	10	5	3
+princess of the earth	1999	3	2	2
+was hydrogen peroxide which	2001	3	3	3
+was hydrogen peroxide which	2002	4	3	3
+was hydrogen peroxide which	2003	5	3	3
+dog's daughter	2000	3	3	3
+is calcium ascorbate	2009	5	4	3
