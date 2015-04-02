@@ -1,6 +1,6 @@
-that ethanol is very flamable   1994    4   2
-brown dog jumps over blah blah  1994    3   1
-that ethanol is very flamable   1995    2   2
-truxe refe fnnn dlk 1998    3   1
-sulfur is yellow    2000    8   1
-sulfur is yellow    2001    3   2
+that ethanol is very flamable   1994    4   2 1
+brown dog jumps over blah blah  1994    3   1 1
+that ethanol is very flamable   1995    2   2 1
+truxe refe fnnn dlk 1998    3   1 1
+sulfur is yellow    2000    8   1 1
+sulfur is yellow    2001    3   2 1
