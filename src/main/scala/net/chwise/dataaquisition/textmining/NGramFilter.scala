@@ -44,7 +44,7 @@ object NGramFilter {
     grams.exists( x => dict.contains(x) )
   }
 
-  def stringRecordToNgramAndFreq(sRecord:String):(String, Int) = {
+  def stringRecordToNgramAndFreq(sRecord:String):Option[(String, Int)] = {
     /*
 File contains TAB-separated strings:
 n-gram - The actual n-gram
@@ -53,8 +53,10 @@ occurrences - The number of times this n-gram appeared in this year
 pages - The number of pages this n-gram appeared on in this year
 books - The number of books this n-gram appeared in during this year
      */
-    sRecord.split("\t") match {
-      case Array(ngram,year,occurrences,pages,books) => (ngram, occurrences.toInt)
+    val splitResult = sRecord.split("\t")
+    splitResult match {
+      case Array(ngram,year,occurrences,pages,books) => Some( (ngram, occurrences.toInt) )
+      case _ => None
     }
   }
 
@@ -99,7 +101,14 @@ Command line options representing class
             else
                 sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text]).map( (p:(LongWritable,Text)) => p._2.toString )
 
-            val ngramsWithOccurences = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) ).reduceByKey( _ + _ )
+            val parsedSourceRDD = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) )
+                .filter( (x) => x match { case Some(_) => true; case None => false} )
+                .map( (x) => x match {case Some(t) => t; case None => ("",0)} ) //None clause must not be called
+
+            if (debug)
+              parsedSourceRDD .saveAsTextFile(outputFile + "_debug_parsedSourceRDD")
+
+            val ngramsWithOccurences = parsedSourceRDD.reduceByKey( _ + _ )
 
             if (debug)
                 ngramsWithOccurences.saveAsTextFile(outputFile + "_debug_ngramsWithOccurences")
@@ -107,7 +116,14 @@ Command line options representing class
             //Read compounds dictionary
             val compoundNamesRDD = sc.textFile(targetPhrasesFilePath)
             val compoundNames:Set[String] = compoundNamesRDD.collect().toSet
+
             val broadcastCompoundNames = sc.broadcast(compoundNames)
+
+            if (debug) {
+              val s:Set[String] = broadcastCompoundNames.value
+              val reRDDCompNames = sc.parallelize(s.toSeq)
+              reRDDCompNames.saveAsTextFile(outputFile + "_reRDDCompNames")
+            }
 
             //Process n-grams in cluster
             val chemicalNGrams = ngramsWithOccurences.filter( line => containsDictionaryPhrase( line._1, broadcastCompoundNames.value) )

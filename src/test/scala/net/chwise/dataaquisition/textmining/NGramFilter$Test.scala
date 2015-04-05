@@ -28,4 +28,13 @@ class NGramFilter$Test extends FunSuite {
     assert( !NGramFilter.containsDictionaryPhrase( "brown dog jumps over blah blah", dict) )
   }
 
+  test("Split string to tokens 1") {
+    val splitResultOption = NGramFilter.stringRecordToNgramAndFreq("ethanol is flamable compound\t1995\t10\t5\t3")
+    val splitResult = splitResultOption match {
+      case Some(x) => x
+      case None => ("",0)
+    }
+    assert( splitResult == ("ethanol is flamable compound", 10) )
+  }
+
 }
