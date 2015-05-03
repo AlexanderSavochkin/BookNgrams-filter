@@ -16,6 +16,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 package net.chwise.dataaquisition.textmining
 
+import org.apache.spark.rdd.RDD
+
 import scala.io.Source
 import scala.collection.immutable.Set
 
@@ -99,10 +101,17 @@ Command line options representing class
             val sourceRDD = if (plainTextInput)
               sc.textFile(ngramsSetPathList)
             else {
-              val t = sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text])
+
+              val lines: RDD[String] = sc.sequenceFile(
+                ngramsSetPathList,
+                classOf[org.apache.hadoop.io.LongWritable],
+                classOf[org.apache.hadoop.io.Text], minPartitions = 4) //Min-partitions should depend on the number or cores in your cluster
+                .map(_._2.toString)
+
+              //val t = sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text])
               if (debug)
-                t.saveAsTextFile(outputFile + "_debug_Hadoop")
-              t.map((p: (LongWritable, Text)) => p._2.toString)
+                lines.saveAsTextFile(outputFile + "_debug_input")
+              lines
             }
 
             val parsedSourceRDD = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) )
