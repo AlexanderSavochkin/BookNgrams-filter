@@ -97,9 +97,13 @@ Command line options representing class
             val sc = new SparkContext(conf)
 
             val sourceRDD = if (plainTextInput)
-                sc.textFile(ngramsSetPathList)
-            else
-                sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text]).map( (p:(LongWritable,Text)) => p._2.toString )
+              sc.textFile(ngramsSetPathList)
+            else {
+              val t = sc.newAPIHadoopFile(ngramsSetPathList, classOf[LzoTextInputFormat], classOf[LongWritable], classOf[Text])
+              if (debug)
+                t.saveAsTextFile(outputFile + "_debug_Hadoop")
+              t.map((p: (LongWritable, Text)) => p._2.toString)
+            }
 
             val parsedSourceRDD = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) )
                 .filter( (x) => x match { case Some(_) => true; case None => false} )
