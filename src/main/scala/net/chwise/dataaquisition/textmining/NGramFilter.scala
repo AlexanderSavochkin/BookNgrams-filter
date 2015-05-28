@@ -16,18 +16,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 package net.chwise.dataaquisition.textmining
 
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
-import scala.io.Source
 import scala.collection.immutable.Set
-
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
-import org.apache.spark.SparkConf
-
-import com.hadoop.mapreduce.LzoTextInputFormat
-import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.io.Text
 
 object NGramFilter {
 
@@ -52,15 +45,16 @@ File contains TAB-separated strings:
 n-gram - The actual n-gram
 year - The year for this aggregation
 occurrences - The number of times this n-gram appeared in this year
-pages - The number of pages this n-gram appeared on in this year
-books - The number of books this n-gram appeared in during this year
+volume_count - ...
      */
     val splitResult = sRecord.split("\t")
     splitResult match {
-      case Array(ngram,year,occurrences,pages,books) => Some( (ngram, occurrences.toInt) )
+      case Array(ngram,year,occurrences,_) => Some( (ngram, occurrences.toInt) )  //2012 version
+      case Array(ngram,year,occurrences,_,_) => Some( (ngram, occurrences.toInt) ) //2009 version
       case _ => None
     }
   }
+
 
 
 /*
@@ -98,8 +92,13 @@ Command line options representing class
             val conf = new SparkConf().setAppName("N-Gram filter")
             val sc = new SparkContext(conf)
 
-            val sourceRDD = if (plainTextInput)
-              sc.textFile(ngramsSetPathList)
+            val sourceRDD = if (plainTextInput) {
+              val lines = sc.textFile(ngramsSetPathList)
+              if (debug)
+                lines.saveAsTextFile(outputFile + "_debug_input")
+              lines
+
+            }
             else {
 
               val lines: RDD[String] = sc.sequenceFile(
@@ -114,12 +113,42 @@ Command line options representing class
               lines
             }
 
-            val parsedSourceRDD = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) )
-                .filter( (x) => x match { case Some(_) => true; case None => false} )
-                .map( (x) => x match {case Some(t) => t; case None => ("",0)} ) //None clause must not be called
-
+            val parsedSourceRDDRaw = sourceRDD.map( (p:String) => stringRecordToNgramAndFreq(p) )
             if (debug)
-              parsedSourceRDD .saveAsTextFile(outputFile + "_debug_parsedSourceRDD")
+              parsedSourceRDDRaw.saveAsTextFile(outputFile + "_debug_parsedSourceRDDRaw")
+
+
+            val parsedSourceRDDGoodFormatOption = parsedSourceRDDRaw.filter( (x) => x match { case Some(_) => true; case None => false} )
+            if (debug)
+              parsedSourceRDDGoodFormatOption.saveAsTextFile(outputFile + "_debug_parsedSourceRDDGoodFormatOption")
+
+
+            val parsedSourceRDDGoodFormat = parsedSourceRDDGoodFormatOption.map( (x) => x match {case Some(t) => t; case None => ("",0)} ) //None clause must not be called
+            if (debug)
+              parsedSourceRDDGoodFormat.saveAsTextFile(outputFile + "_debug_parsedSourceRDDGoodFormat")
+
+
+            val parsedSourceRDDPOSFiltered = parsedSourceRDDGoodFormat.filter(  r => !(r._1 matches ".+_(NOUN|VERB|ADJ|ADV|PRON|DET|ADP|NUM|CONJ|PRT|\\.|X).*" ) ) //Filter pos tagged ngrams
+            if (debug)
+              parsedSourceRDDPOSFiltered.saveAsTextFile(outputFile + "_debug_parsedSourceRDDPOSFiltered")
+
+
+            val parsedSourceRDDSentenseMarksFiltered = parsedSourceRDDPOSFiltered.map(r=> ( r._1.replaceAll("_(START|END)_",""), r._2) )
+            if (debug)
+              parsedSourceRDDSentenseMarksFiltered.saveAsTextFile(outputFile + "_debug_parsedSourceRDDSentenseMarksRemoved")
+
+            val parsedSourceRDDStartEndSpacesRemoved = parsedSourceRDDSentenseMarksFiltered.map(r=>  ( r._1.replaceAll("(^\\s+|\\s+$)",""), r._2) )  //Remove extra spaces
+            if (debug)
+              parsedSourceRDDStartEndSpacesRemoved.saveAsTextFile(outputFile + "_debug_parsedSourceRDDStartEndSpaceRemoved")
+
+            val parsedSourceRDDSpacesShrinked = parsedSourceRDDStartEndSpacesRemoved.map(r=>  ( r._1.replaceAll("\\s+"," "), r._2) )
+            if (debug)
+              parsedSourceRDDSpacesShrinked.saveAsTextFile(outputFile + "_debug_parsedSourceRDDSpacesShrinked")
+
+            val parsedSourceRDD = parsedSourceRDDSpacesShrinked.map( r => (r._1.toLowerCase, r._2) )  //lowercase ngrams
+            if (debug)
+              parsedSourceRDD.saveAsTextFile(outputFile + "_debug_parsedSourceRDDSpacesLowerCased")
+
 
             val ngramsWithOccurences = parsedSourceRDD.reduceByKey( _ + _ )
 

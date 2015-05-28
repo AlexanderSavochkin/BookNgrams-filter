@@ -29,7 +29,7 @@ class NGramFilter$Test extends FunSuite {
   }
 
   test("Split string to tokens 1") {
-    val splitResultOption = NGramFilter.stringRecordToNgramAndFreq("ethanol is flamable compound\t1995\t10\t5\t3")
+    val splitResultOption = NGramFilter.stringRecordToNgramAndFreq("ethanol is flamable compound\t1995\t10\t5")
     val splitResult = splitResultOption match {
       case Some(x) => x
       case None => ("",0)
